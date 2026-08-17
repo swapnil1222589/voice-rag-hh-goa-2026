@@ -1,11 +1,9 @@
 """Raw audio utilities — normalisation, resampling, format sniffing.
 
-STT providers have different format expectations.  These helpers keep that
-complexity out of the pipeline.
-
-Always normalise to 16 kHz mono WAV before sending to any STT provider,
-regardless of the input MIME type (even audio/wav may be 44.1 kHz or 48 kHz
-from the browser).
+Always normalise to 16 kHz mono WAV before sending to any STT provider.
+Two backends are supported (tried in order):
+  1. librosa  — preferred on full installs (local / Docker)
+  2. resampy + soundfile — lightweight fallback (Vercel / serverless)
 """
 from __future__ import annotations
 
@@ -18,7 +16,7 @@ logger = logging.getLogger(__name__)
 # ── Format detection ─────────────────────────────────────────────
 _MAGIC = {
     b"RIFF": "audio/wav",
-    b"ID3": "audio/mp3",
+    b"ID3":  "audio/mp3",
     b"\xff\xfb": "audio/mp3",
     b"\xff\xf3": "audio/mp3",
     b"\xff\xfa": "audio/mp3",
@@ -33,20 +31,19 @@ def detect_mime(audio_bytes: bytes) -> str:
     for magic, mime in _MAGIC.items():
         if audio_bytes[: len(magic)] == magic:
             return mime
-    # webm sometimes starts with 0x1A 0x45
     if audio_bytes[:2] == b"\x1a\x45":
         return "audio/webm"
-    return "audio/wav"  # safe fallback
+    return "audio/wav"
 
 
 def to_wav(audio_bytes: bytes, target_sr: int = 16000) -> Tuple[bytes, str]:
-    """Convert any supported audio to 16 kHz mono WAV using librosa.
+    """Convert any supported audio to 16 kHz mono WAV.
 
-    This is always called — even for audio/wav — because browsers often
-    record at 44.1 kHz or 48 kHz which some STT providers reject.
-
-    Returns (wav_bytes, mime_type).  Falls back to original bytes on error.
+    Tries librosa first (full installs), falls back to soundfile + resampy
+    (serverless / Vercel where librosa's torch dep is too heavy).
+    Returns (wav_bytes, mime_type).
     """
+    # ── Try librosa (preferred) ────────────────────────────────────
     try:
         import librosa
         import soundfile as sf
@@ -56,6 +53,31 @@ def to_wav(audio_bytes: bytes, target_sr: int = 16000) -> Tuple[bytes, str]:
         sf.write(buf, y, target_sr, format="WAV", subtype="PCM_16")
         buf.seek(0)
         return buf.read(), "audio/wav"
+    except ImportError:
+        pass  # librosa not available — try soundfile + resampy
     except Exception as exc:
-        logger.warning("Audio conversion to 16kHz WAV failed (%s); using original bytes", exc)
-        return audio_bytes, detect_mime(audio_bytes)
+        logger.warning("librosa conversion failed (%s); trying soundfile fallback", exc)
+
+    # ── Fallback: soundfile + resampy ─────────────────────────────
+    try:
+        import numpy as np
+        import resampy
+        import soundfile as sf
+
+        data, sr = sf.read(io.BytesIO(audio_bytes), always_2d=True, dtype="float32")
+        # Mix down to mono
+        if data.shape[1] > 1:
+            data = data.mean(axis=1)
+        else:
+            data = data[:, 0]
+        # Resample if needed
+        if sr != target_sr:
+            data = resampy.resample(data, sr, target_sr)
+        buf = io.BytesIO()
+        sf.write(buf, data, target_sr, format="WAV", subtype="PCM_16")
+        buf.seek(0)
+        return buf.read(), "audio/wav"
+    except Exception as exc:
+        logger.warning("soundfile/resampy conversion failed (%s); using original bytes", exc)
+
+    return audio_bytes, detect_mime(audio_bytes)

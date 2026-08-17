@@ -82,11 +82,11 @@ def main():
         "14 Indic languages. <200ms pipeline. 94 tests."
     )
 
-    print(f"\n📦 Creating GitHub repo: {args.repo}...")
+    print(f"\n[*] Creating GitHub repo: {args.repo}...")
     repo = create_github_repo(args.token, args.repo, desc, args.private)
     clone_url = repo["clone_url"]
     html_url = repo["html_url"]
-    print(f"✅ Repo URL: {html_url}")
+    print(f"[OK] Repo URL: {html_url}")
 
     # Configure authenticated remote URL
     auth_url = clone_url.replace("https://", f"https://{args.token}@")
@@ -99,7 +99,7 @@ def main():
         run(["git", "remote", "add", "origin", auth_url])
 
     # Push
-    print("\n🚀 Pushing to GitHub...")
+    print("\n[>>] Pushing to GitHub...")
     result = run(["git", "push", "-u", "origin", "master"])
     if result.returncode != 0:
         # Try main branch
@@ -107,11 +107,11 @@ def main():
         result = run(["git", "push", "-u", "origin", "main"])
 
     if result.returncode == 0:
-        print(f"\n🎉 Published successfully!")
+        print(f"\n[DONE] Published successfully!")
         print(f"   Repository: {html_url}")
         print(f"   Clone:      git clone {clone_url}")
     else:
-        print("\n❌ Push failed. Try manually:")
+        print("\n[FAIL] Push failed. Try manually:")
         print(f"   git remote add origin {clone_url}")
         print(f"   git push -u origin main")
 
