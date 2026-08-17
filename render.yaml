@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: voice-rag
+    env: python
+    region: singapore        # closest to India for HH Goa 2026
+    plan: starter
+    buildCommand: "pip install -r requirements.txt && pip install -e . && python -m spacy download en_core_web_sm"
+    startCommand: "uvicorn api.app:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: ELEVENLABS_API_KEY
+        sync: false          # fill in Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: STT_PROVIDER
+        value: elevenlabs
+      - key: CHROMA_PERSIST_DIR
+        value: /opt/render/project/src/data/chroma_db
+      - key: FRONTEND_URL
+        value: ""            # Set to your frontend URL after deploy

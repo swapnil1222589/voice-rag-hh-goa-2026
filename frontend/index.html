@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceRAG — MSMARCO-XI | HH Goa 2026</title>
+  <meta name="description" content="Voice-enabled Retrieval-Augmented Generation over MSMARCO-XI. Speak your question, get grounded answers in 14 Indic languages." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <div class="nav-brand">
+      <div class="nav-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 1C8.13 1 5 4.13 5 8V12C5 15.87 8.13 19 12 19C15.87 19 19 15.87 19 12V8C19 4.13 15.87 1 12 1Z" fill="url(#mic-grad)"/>
+          <path d="M12 21C8.13 21 5 17.87 5 14H7C7 16.76 9.24 19 12 19C14.76 19 17 16.76 17 14H19C19 17.87 15.87 21 12 21Z" fill="url(#mic-grad)"/>
+          <rect x="11" y="21" width="2" height="2" fill="url(#mic-grad)"/>
+          <defs>
+            <linearGradient id="mic-grad" x1="5" y1="1" x2="19" y2="23" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#60a5fa"/>
+              <stop offset="100%" stop-color="#818cf8"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <span class="nav-title">VoiceRAG</span>
+      <span class="nav-badge">HH Goa 2026</span>
+    </div>
+    <div class="nav-links">
+      <a href="#ask" class="nav-link active" id="nav-ask" onclick="showPage('ask')">Ask</a>
+      <a href="#eval" class="nav-link" id="nav-eval" onclick="showPage('eval')">Evaluation</a>
+      <a href="#arch" class="nav-link" id="nav-arch" onclick="showPage('arch')">Architecture</a>
+    </div>
+  </nav>
+
+  <!-- ══ ASK PAGE ══════════════════════════════════════════════ -->
+  <main id="page-ask" class="page active">
+    <div class="ask-hero">
+      <h1 class="hero-title">Voice RAG over <span class="gradient-text">MSMARCO-XI</span></h1>
+      <p class="hero-sub">Ask questions in 14 Indic languages. Get grounded answers from retrieved sources.</p>
+    </div>
+
+    <div class="ask-container">
+      <!-- Controls -->
+      <div class="controls-row">
+        <div class="lang-selector-wrap">
+          <label class="control-label">Language</label>
+          <select id="lang-select" class="select-input">
+            <option value="">Auto-detect</option>
+            <option value="hi">Hindi (हिंदी)</option>
+            <option value="bn">Bengali (বাংলা)</option>
+            <option value="ta">Tamil (தமிழ்)</option>
+            <option value="te">Telugu (తెలుగు)</option>
+            <option value="mr">Marathi (मराठी)</option>
+            <option value="gu">Gujarati (ગુજરાતી)</option>
+            <option value="kn">Kannada (ಕನ್ನಡ)</option>
+            <option value="ml">Malayalam (മലയാളം)</option>
+            <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+            <option value="ur">Urdu (اردو)</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div class="stt-selector-wrap">
+          <label class="control-label">STT Provider</label>
+          <select id="stt-select" class="select-input">
+            <option value="elevenlabs">ElevenLabs Scribe</option>
+            <option value="sarvam">Sarvam Aasaar</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Microphone Button -->
+      <div class="mic-wrapper" id="mic-wrapper">
+        <div class="mic-rings" id="mic-rings">
+          <div class="ring ring-1"></div>
+          <div class="ring ring-2"></div>
+          <div class="ring ring-3"></div>
+        </div>
+        <button class="mic-btn" id="mic-btn" onclick="toggleRecording()" title="Press to speak">
+          <svg id="mic-icon" width="40" height="40" viewBox="0 0 24 24" fill="none">
+            <path d="M12 1C8.13 1 5 4.13 5 8V12C5 15.87 8.13 19 12 19C15.87 19 19 15.87 19 12V8C19 4.13 15.87 1 12 1Z" fill="white"/>
+            <path d="M12 21C8.13 21 5 17.87 5 14H7C7 16.76 9.24 19 12 19C14.76 19 17 16.76 17 14H19C19 17.87 15.87 21 12 21Z" fill="white"/>
+            <rect x="11" y="21" width="2" height="2" fill="white"/>
+          </svg>
+          <svg id="stop-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" style="display:none">
+            <rect x="6" y="6" width="12" height="12" rx="2" fill="white"/>
+          </svg>
+        </button>
+      </div>
+      <p class="mic-hint" id="mic-hint">Click to start recording</p>
+
+      <!-- Text query fallback -->
+      <div class="text-query-wrap">
+        <div class="text-query-row">
+          <input type="text" id="text-input" class="text-input" placeholder="Or type your question here..." />
+          <button class="send-btn" onclick="sendTextQuery()" title="Send text query">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Banner -->
+      <div class="status-banner" id="status-banner" style="display:none">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">Processing...</span>
+      </div>
+
+      <!-- Results area -->
+      <div id="results" class="results" style="display:none">
+        <!-- Transcript Card -->
+        <div class="card transcript-card" id="transcript-card" style="display:none">
+          <div class="card-header">
+            <div class="card-icon transcript-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h3 class="card-title">Transcript</h3>
+            <span class="card-badge" id="stt-provider-badge"></span>
+          </div>
+          <p class="transcript-text" id="transcript-text"></p>
+        </div>
+
+        <!-- Answer Card -->
+        <div class="card answer-card" id="answer-card" style="display:none">
+          <div class="card-header">
+            <div class="card-icon answer-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/><path d="M12 16V12M12 8H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="card-title">Answer</h3>
+            <div class="grounding-badge" id="grounding-badge"></div>
+          </div>
+          <p class="answer-text" id="answer-text"></p>
+          <div class="confidence-bar-wrap" id="confidence-wrap" style="display:none">
+            <span class="confidence-label">Confidence</span>
+            <div class="confidence-bar">
+              <div class="confidence-fill" id="confidence-fill"></div>
+            </div>
+            <span class="confidence-pct" id="confidence-pct"></span>
+          </div>
+        </div>
+
+        <!-- Sources -->
+        <div class="card sources-card" id="sources-card" style="display:none">
+          <div class="card-header">
+            <div class="card-icon sources-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h3 class="card-title">Retrieved Sources</h3>
+            <span class="sources-count" id="sources-count"></span>
+          </div>
+          <div class="sources-list" id="sources-list"></div>
+        </div>
+
+        <!-- Latency Card -->
+        <div class="card latency-card" id="latency-card" style="display:none">
+          <div class="card-header">
+            <div class="card-icon latency-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h3 class="card-title">Pipeline Latency</h3>
+            <span class="total-latency" id="total-latency-badge"></span>
+          </div>
+          <div class="stages-list" id="stages-list"></div>
+        </div>
+
+        <!-- Guardrail flags -->
+        <div id="guardrail-flags-wrap" style="display:none">
+          <div class="flags-list" id="flags-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ══ EVALUATION PAGE ═══════════════════════════════════════ -->
+  <main id="page-eval" class="page" style="display:none">
+    <div class="page-header">
+      <h1 class="page-title">Evaluation <span class="gradient-text">Dashboard</span></h1>
+      <p class="page-sub">Real benchmark results from <code>scripts/benchmark.py</code></p>
+      <button class="refresh-btn" onclick="loadBenchmark()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M23 4V10H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 20V14H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Refresh
+      </button>
+    </div>
+
+    <div id="eval-loading" class="eval-loading">
+      <div class="spinner"></div>
+      <p>Loading benchmark results...</p>
+    </div>
+
+    <div id="eval-content" style="display:none">
+      <!-- Key Metrics Grid -->
+      <div class="metrics-grid" id="metrics-grid"></div>
+
+      <!-- Latency Chart -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <h3 class="card-title">Latency Distribution (ms)</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="latency-chart" width="800" height="300"></canvas>
+        </div>
+      </div>
+
+      <!-- Stage Breakdown -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <h3 class="card-title">Stage Latency Breakdown (avg ms)</h3>
+        </div>
+        <div id="stage-breakdown"></div>
+      </div>
+
+      <!-- Per-query table -->
+      <div class="card table-card">
+        <div class="card-header">
+          <h3 class="card-title">Per-Query Results</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="results-table" id="query-table">
+            <thead>
+              <tr>
+                <th>Query</th>
+                <th>P50 (ms)</th>
+                <th>P70 (ms)</th>
+                <th>P100 (ms)</th>
+                <th>Mean (ms)</th>
+                <th>Refusals</th>
+              </tr>
+            </thead>
+            <tbody id="query-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="eval-empty" style="display:none" class="eval-empty">
+      <div class="empty-icon">📊</div>
+      <h3>No benchmark results yet</h3>
+      <p>Run the benchmark script to generate results:</p>
+      <code class="code-block">python scripts/benchmark.py --n 5</code>
+      <p class="eval-note">Results will be saved to <code>data/benchmark_results.json</code> and served here.</p>
+    </div>
+  </main>
+
+  <!-- ══ ARCHITECTURE PAGE ══════════════════════════════════════ -->
+  <main id="page-arch" class="page" style="display:none">
+    <div class="page-header">
+      <h1 class="page-title">System <span class="gradient-text">Architecture</span></h1>
+      <p class="page-sub">Voice-enabled RAG pipeline with hybrid retrieval and multilingual guardrails</p>
+    </div>
+
+    <div class="arch-container">
+      <!-- Pipeline Flow -->
+      <div class="pipeline-flow">
+        <div class="flow-step voice">
+          <div class="flow-icon">🎤</div>
+          <div class="flow-content">
+            <h4>Voice Input</h4>
+            <p>Browser MediaRecorder API captures audio in WebM/Opus format</p>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+
+        <div class="flow-step stt">
+          <div class="flow-icon">🔊</div>
+          <div class="flow-content">
+            <h4>Speech-to-Text</h4>
+            <p><strong>ElevenLabs Scribe</strong> (default) or <strong>Sarvam Aasaar</strong></p>
+            <p>Audio normalised to 16 kHz WAV before API call. Supports 14 Indic languages + English</p>
+            <div class="tech-chips">
+              <span class="chip">ElevenLabs Scribe v1</span>
+              <span class="chip">Sarvam Aasaar</span>
+              <span class="chip">librosa 16kHz normalisation</span>
+            </div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+
+        <div class="flow-step guard">
+          <div class="flow-icon">🛡️</div>
+          <div class="flow-content">
+            <h4>Input Guardrail</h4>
+            <p>Validates the transcribed query before retrieval</p>
+            <ul class="guard-list">
+              <li>Length constraints (min/max chars)</li>
+              <li>Unsafe/harmful content (7 regex patterns)</li>
+              <li>Prompt injection detection (5 patterns)</li>
+              <li>PII detection (email, phone, SSN, card)</li>
+              <li>Gibberish detection (STT noise filter)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+
+        <div class="flow-step retrieval">
+          <div class="flow-icon">🔍</div>
+          <div class="flow-content">
+            <h4>Hybrid Retrieval</h4>
+            <p>Two retrievers fused via <strong>Reciprocal Rank Fusion (RRF, k=60)</strong></p>
+            <div class="retrieval-split">
+              <div class="retrieval-branch">
+                <strong>Dense (Vector)</strong>
+                <p>ChromaDB HNSW + paraphrase-multilingual-MiniLM-L12-v2</p>
+                <p>Top-15 candidates</p>
+              </div>
+              <div class="retrieval-plus">+</div>
+              <div class="retrieval-branch">
+                <strong>Sparse (BM25)</strong>
+                <p>BM25Okapi with Unicode-aware tokenizer (handles Indic scripts)</p>
+                <p>Top-15 candidates</p>
+              </div>
+            </div>
+            <div class="tech-chips">
+              <span class="chip">ChromaDB HNSW (cosine)</span>
+              <span class="chip">rank-bm25</span>
+              <span class="chip">RRF fusion</span>
+              <span class="chip">Batch cosine reranking</span>
+            </div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+
+        <div class="flow-step guard">
+          <div class="flow-icon">⚖️</div>
+          <div class="flow-content">
+            <h4>Relevance Guardrail</h4>
+            <p>Checks if retrieved context is relevant enough</p>
+            <p>Threshold: <code>RRF score ≥ 0.25</code>. If no context → abstain without calling LLM</p>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+
+        <div class="flow-step generation">
+          <div class="flow-icon">✨</div>
+          <div class="flow-content">
+            <h4>Grounded Generation</h4>
+            <p><strong>OpenAI GPT-4o-mini</strong> answers only from retrieved context</p>
+            <p>System prompt explicitly forbids hallucination. Abstains if context is insufficient.</p>
+            <div class="tech-chips">
+              <span class="chip">GPT-4o-mini</span>
+              <span class="chip">Context-only prompt</span>
+              <span class="chip">Tenacity retries</span>
+            </div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+
+        <div class="flow-step guard">
+          <div class="flow-icon">🔬</div>
+          <div class="flow-content">
+            <h4>Output Guardrail</h4>
+            <p>Verifies the generated answer is grounded in retrieved context</p>
+            <ul class="guard-list">
+              <li>Extracts factual claims (numbers, dates, years)</li>
+              <li>Checks each claim appears in retrieved context</li>
+              <li>Detects correct refusals as positive outcomes</li>
+              <li>Computes grounding confidence score</li>
+            </ul>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+
+        <div class="flow-step answer">
+          <div class="flow-icon">💬</div>
+          <div class="flow-content">
+            <h4>Final Answer</h4>
+            <p>Structured response with answer, sources, confidence, and per-stage latency</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dataset Section -->
+      <div class="arch-section">
+        <h2 class="arch-section-title">Dataset: MSMARCO-XI</h2>
+        <div class="dataset-grid">
+          <div class="dataset-card">
+            <div class="dataset-num">14</div>
+            <div class="dataset-label">Indic Languages</div>
+          </div>
+          <div class="dataset-card">
+            <div class="dataset-num">55 GB</div>
+            <div class="dataset-label">Full Dataset</div>
+          </div>
+          <div class="dataset-card">
+            <div class="dataset-num">10</div>
+            <div class="dataset-label">Passages per Query</div>
+          </div>
+          <div class="dataset-card">
+            <div class="dataset-num">4</div>
+            <div class="dataset-label">Chunking Strategies</div>
+          </div>
+        </div>
+        <div class="lang-chips">
+          <span class="lang-chip">Hindi</span>
+          <span class="lang-chip">Bengali</span>
+          <span class="lang-chip">Tamil</span>
+          <span class="lang-chip">Telugu</span>
+          <span class="lang-chip">Marathi</span>
+          <span class="lang-chip">Gujarati</span>
+          <span class="lang-chip">Kannada</span>
+          <span class="lang-chip">Malayalam</span>
+          <span class="lang-chip">Punjabi</span>
+          <span class="lang-chip">Odia</span>
+          <span class="lang-chip">Assamese</span>
+          <span class="lang-chip">Nepali</span>
+          <span class="lang-chip">Urdu</span>
+          <span class="lang-chip">Sanskrit</span>
+        </div>
+      </div>
+
+      <!-- Chunking Section -->
+      <div class="arch-section">
+        <h2 class="arch-section-title">Chunking Strategies</h2>
+        <div class="chunking-grid">
+          <div class="chunk-card">
+            <div class="chunk-icon">📐</div>
+            <h4>Fixed-Size</h4>
+            <p>Token-window with overlap. Baseline comparison. tiktoken cl100k_base.</p>
+          </div>
+          <div class="chunk-card">
+            <div class="chunk-icon">🌿</div>
+            <h4>Recursive</h4>
+            <p>Splits on sentence boundaries first, then words. Preserves sentence integrity. Indic danda (।) aware.</p>
+          </div>
+          <div class="chunk-card chunk-card--active">
+            <div class="chunk-icon">🧠</div>
+            <h4>Semantic ★</h4>
+            <p>Groups sentences by Jaccard similarity. Breaks at topical boundaries. Default strategy.</p>
+          </div>
+          <div class="chunk-card">
+            <div class="chunk-icon">🏷️</div>
+            <h4>Metadata-Aware</h4>
+            <p>One chunk per passage, all metadata preserved. No splitting. Ideal for short passages.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tech Stack -->
+      <div class="arch-section">
+        <h2 class="arch-section-title">Tech Stack</h2>
+        <div class="stack-grid">
+          <div class="stack-row"><span class="stack-label">STT</span><span class="stack-value">ElevenLabs Scribe v1 / Sarvam Aasaar</span></div>
+          <div class="stack-row"><span class="stack-label">Embeddings</span><span class="stack-value">sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2</span></div>
+          <div class="stack-row"><span class="stack-label">Vector DB</span><span class="stack-value">ChromaDB (HNSW, cosine distance)</span></div>
+          <div class="stack-row"><span class="stack-label">Sparse Retrieval</span><span class="stack-value">rank-bm25 (BM25Okapi)</span></div>
+          <div class="stack-row"><span class="stack-label">Fusion</span><span class="stack-value">Reciprocal Rank Fusion (RRF, k=60)</span></div>
+          <div class="stack-row"><span class="stack-label">LLM</span><span class="stack-value">OpenAI GPT-4o-mini</span></div>
+          <div class="stack-row"><span class="stack-label">API</span><span class="stack-value">FastAPI + Uvicorn (async)</span></div>
+          <div class="stack-row"><span class="stack-label">Orchestration</span><span class="stack-value">Custom harness with Tenacity retries</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

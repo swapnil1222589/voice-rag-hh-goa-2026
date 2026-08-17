@@ -1,0 +1,43 @@
+# ── Web API ──────────────────────────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9          # file upload support
+starlette>=0.37.2
+
+# ── Configuration ─────────────────────────────────────────────────
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+
+# ── Speech-to-Text ────────────────────────────────────────────────
+httpx>=0.27.0                    # used by ElevenLabs + Sarvam providers
+tenacity>=8.3.0                  # retries
+
+# ── Audio processing ──────────────────────────────────────────────
+librosa>=0.10.0
+soundfile>=0.12.0
+numpy>=1.26.0
+
+# ── NLP / Embeddings ──────────────────────────────────────────────
+sentence-transformers>=3.0.0
+tiktoken>=0.7.0
+spacy>=3.7.0
+
+# ── Vector database ───────────────────────────────────────────────
+chromadb>=0.5.0
+
+# ── Sparse retrieval ──────────────────────────────────────────────
+rank-bm25>=0.2.2
+
+# ── Generation ────────────────────────────────────────────────────
+openai>=1.35.0
+
+# ── Dataset ───────────────────────────────────────────────────────
+datasets>=2.20.0
+
+# ── Benchmarking ──────────────────────────────────────────────────
+numpy>=1.26.0                    # already listed above
+
+# ── Testing ───────────────────────────────────────────────────────
+pytest>=8.2.0
+pytest-asyncio>=0.23.0
+httpx>=0.27.0                    # TestClient uses httpx internally
