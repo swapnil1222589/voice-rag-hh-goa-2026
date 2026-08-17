@@ -1,15 +1,8 @@
 {
   "rewrites": [
-    { "source": "/ui/(.*)", "destination": "/frontend/$1" },
-    { "source": "/ask",     "destination": "/api/index" },
-    { "source": "/ask/(.*)", "destination": "/api/index" },
-    { "source": "/health",  "destination": "/api/index" },
-    { "source": "/stats",   "destination": "/api/index" },
-    { "source": "/benchmark", "destination": "/api/index" },
-    { "source": "/docs",    "destination": "/api/index" },
-    { "source": "/openapi.json", "destination": "/api/index" },
-    { "source": "/",        "destination": "/frontend/index.html" }
+    { "source": "/(.*)", "destination": "/api/index" }
   ],
+  "installCommand": "pip install -r requirements.txt",
   "env": {
     "PYTHONPATH": "src"
   }
