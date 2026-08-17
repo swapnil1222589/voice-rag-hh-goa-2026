@@ -1,39 +1,14 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
-    },
-    {
-      "src": "frontend/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/ui/(.*)",
-      "dest": "/frontend/$1"
-    },
-    {
-      "src": "/(health|ask|stats|benchmark)(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/docs(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/openapi.json",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/",
-      "dest": "/frontend/index.html"
-    }
+  "rewrites": [
+    { "source": "/ui/(.*)", "destination": "/frontend/$1" },
+    { "source": "/ask",     "destination": "/api/index" },
+    { "source": "/ask/(.*)", "destination": "/api/index" },
+    { "source": "/health",  "destination": "/api/index" },
+    { "source": "/stats",   "destination": "/api/index" },
+    { "source": "/benchmark", "destination": "/api/index" },
+    { "source": "/docs",    "destination": "/api/index" },
+    { "source": "/openapi.json", "destination": "/api/index" },
+    { "source": "/",        "destination": "/frontend/index.html" }
   ],
   "env": {
     "PYTHONPATH": "src"
